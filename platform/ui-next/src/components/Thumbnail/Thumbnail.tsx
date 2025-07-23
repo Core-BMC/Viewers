@@ -5,6 +5,7 @@ import { useDrag } from 'react-dnd';
 import { Icons } from '../Icons';
 import { DisplaySetMessageListTooltip } from '../DisplaySetMessageListTooltip';
 import { TooltipTrigger, TooltipContent, Tooltip } from '../Tooltip';
+import { StudyMemoButton } from '../StudyMemo';
 
 /**
  * Display a thumbnail for a display set.
@@ -33,7 +34,33 @@ const Thumbnail = ({
   onReject = () => {},
   onClickUntrack = () => {},
   ThumbnailMenuItems = () => {},
-}: withAppTypes): React.ReactNode => {
+  studyInstanceUID,
+}: {
+  displaySetInstanceUID: string;
+  className?: string;
+  imageSrc?: string;
+  imageAltText?: string;
+  description: string;
+  seriesNumber: any;
+  numInstances: number;
+  loadingProgress?: number;
+  countIcon?: string;
+  messages?: any;
+  isActive: boolean;
+  onClick: (e: any) => void;
+  onDoubleClick: (e: any) => void;
+  thumbnailType?: string;
+  modality?: string;
+  viewPreset?: string;
+  isHydratedForDerivedDisplaySet?: boolean;
+  isTracked?: boolean;
+  canReject?: boolean;
+  dragData?: any;
+  onReject?: () => void;
+  onClickUntrack?: () => void;
+  ThumbnailMenuItems?: any;
+  studyInstanceUID?: string;
+}): React.ReactNode => {
   // TODO: We should wrap our thumbnail to create a "DraggableThumbnail", as
   // this will still allow for "drag", even if there is no drop target for the
   // specified item.
@@ -129,9 +156,17 @@ const Thumbnail = ({
             <div className="absolute bottom-0 right-0 flex items-center gap-[4px] p-[4px]">
               <ThumbnailMenuItems
                 displaySetInstanceUID={displaySetInstanceUID}
+                studyInstanceUID={studyInstanceUID}
                 canReject={canReject}
                 onReject={onReject}
               />
+              {/* Study Memo Button */}
+              {studyInstanceUID && (
+                <StudyMemoButton
+                  studyInstanceUID={studyInstanceUID}
+                  size="sm"
+                />
+              )}
             </div>
           </div>
         </div>
@@ -241,9 +276,17 @@ const Thumbnail = ({
           )}
           <ThumbnailMenuItems
             displaySetInstanceUID={displaySetInstanceUID}
+            studyInstanceUID={studyInstanceUID}
             canReject={canReject}
             onReject={onReject}
           />
+          {/* Study Memo Button */}
+          {studyInstanceUID && (
+            <StudyMemoButton
+              studyInstanceUID={studyInstanceUID}
+              size="sm"
+            />
+          )}
         </div>
       </div>
     );
@@ -267,15 +310,10 @@ const Thumbnail = ({
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       onTouchEnd={handleTouchEnd}
-      role="button"
+      ref={drag}
+      style={collectedProps && typeof collectedProps === 'object' ? collectedProps : {}}
     >
-      <div
-        ref={drag}
-        className="h-full w-full"
-      >
-        {viewPreset === 'thumbnails' && renderThumbnailPreset()}
-        {viewPreset === 'list' && renderListPreset()}
-      </div>
+      {viewPreset === 'thumbnails' ? renderThumbnailPreset() : renderListPreset()}
     </div>
   );
 };
@@ -284,33 +322,27 @@ Thumbnail.propTypes = {
   displaySetInstanceUID: PropTypes.string.isRequired,
   className: PropTypes.string,
   imageSrc: PropTypes.string,
-  /**
-   * Data the thumbnail should expose to a receiving drop target. Use a matching
-   * `dragData.type` to identify which targets can receive this draggable item.
-   * If this is not set, drag-n-drop will be disabled for this thumbnail.
-   *
-   * Ref: https://react-dnd.github.io/react-dnd/docs/api/use-drag#specification-object-members
-   */
-  dragData: PropTypes.shape({
-    /** Must match the "type" a dropTarget expects */
-    type: PropTypes.string.isRequired,
-  }),
   imageAltText: PropTypes.string,
   description: PropTypes.string.isRequired,
   seriesNumber: PropTypes.any,
   numInstances: PropTypes.number.isRequired,
   loadingProgress: PropTypes.number,
-  messages: PropTypes.object,
+  countIcon: PropTypes.string,
+  messages: PropTypes.array,
   isActive: PropTypes.bool.isRequired,
   onClick: PropTypes.func.isRequired,
   onDoubleClick: PropTypes.func.isRequired,
-  viewPreset: PropTypes.string,
+  thumbnailType: PropTypes.string,
   modality: PropTypes.string,
+  viewPreset: PropTypes.string,
   isHydratedForDerivedDisplaySet: PropTypes.bool,
   isTracked: PropTypes.bool,
+  canReject: PropTypes.bool,
+  dragData: PropTypes.object,
+  onReject: PropTypes.func,
   onClickUntrack: PropTypes.func,
-  countIcon: PropTypes.string,
-  thumbnailType: PropTypes.oneOf(['thumbnail', 'thumbnailTracked', 'thumbnailNoImage']),
+  ThumbnailMenuItems: PropTypes.func,
+  studyInstanceUID: PropTypes.string,
 };
 
 export { Thumbnail };

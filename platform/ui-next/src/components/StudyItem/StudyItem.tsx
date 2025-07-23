@@ -81,7 +81,10 @@ const StudyItem = ({
         >
           {isExpanded && displaySets && (
             <ThumbnailList
-              thumbnails={displaySets}
+              thumbnails={displaySets?.map(displaySet => ({
+                ...displaySet,
+                studyInstanceUID: StudyInstanceUID
+              }))}
               activeDisplaySetInstanceUIDs={activeDisplaySetInstanceUIDs}
               onThumbnailClick={onClickThumbnail}
               onThumbnailDoubleClick={onDoubleClickThumbnail}

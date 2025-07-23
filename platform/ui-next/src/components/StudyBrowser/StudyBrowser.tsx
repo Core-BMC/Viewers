@@ -21,9 +21,24 @@ const StudyBrowser = ({
   servicesManager,
   showSettings,
   viewPresets,
-  ThumbnailMenuItems,
+  ThumbnailMenuItems = null,
   StudyMenuItems,
-}: withAppTypes) => {
+}: {
+  tabs: any[];
+  activeTabName: string;
+  expandedStudyInstanceUIDs: string[];
+  onClickTab: (tabName: string) => void;
+  onClickStudy?: (studyInstanceUID: string) => void;
+  onClickThumbnail?: (displaySetInstanceUID: string) => void;
+  onDoubleClickThumbnail?: (displaySetInstanceUID: string) => void;
+  onClickUntrack?: (displaySetInstanceUID: string) => void;
+  activeDisplaySetInstanceUIDs?: string[];
+  servicesManager?: any;
+  showSettings?: boolean;
+  viewPresets?: any[];
+  ThumbnailMenuItems?: any;
+  StudyMenuItems?: any;
+}) => {
   const getTabContent = () => {
     const tabData = tabs.find(tab => tab.name === activeTabName);
     const viewPreset = viewPresets

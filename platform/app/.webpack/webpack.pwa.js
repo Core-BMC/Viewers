@@ -161,7 +161,18 @@ module.exports = (env, argv) => {
         overlay: { errors: true, warnings: false },
       },
       proxy: {
-        '/dicomweb': 'http://localhost:5000',
+        '/dicomweb': {
+          target: 'http://localhost:8042',
+          pathRewrite: {
+            '^/dicomweb': '/dicom-web',
+          },
+        },
+        '/orthanc': {
+          target: 'http://localhost:8042',
+          pathRewrite: {
+            '^/orthanc': '',
+          },
+        },
         '/dicom-microscopy-viewer': {
           target: 'http://localhost:3000',
           pathRewrite: {

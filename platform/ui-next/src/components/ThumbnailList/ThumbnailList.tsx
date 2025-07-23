@@ -53,6 +53,7 @@ const ThumbnailList = ({
                   onDoubleClick={onThumbnailDoubleClick.bind(null, displaySetInstanceUID)}
                   onClickUntrack={onClickUntrack.bind(null, displaySetInstanceUID)}
                   ThumbnailMenuItems={ThumbnailMenuItems}
+                  studyInstanceUID={rest.studyInstanceUID}
                 />
               );
             })}
@@ -80,6 +81,7 @@ const ThumbnailList = ({
                   onDoubleClick={onThumbnailDoubleClick.bind(null, displaySetInstanceUID)}
                   onClickUntrack={onClickUntrack.bind(null, displaySetInstanceUID)}
                   ThumbnailMenuItems={ThumbnailMenuItems}
+                  studyInstanceUID={rest.studyInstanceUID}
                 />
               );
             })}
