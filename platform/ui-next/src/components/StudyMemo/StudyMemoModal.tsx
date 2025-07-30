@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StudyMemoService, type LoadResult } from '../../services/StudyMemoService';
+import { Icons } from '../Icons';
 
 interface StudyMemoModalProps {
   isOpen: boolean;
@@ -7,19 +8,25 @@ interface StudyMemoModalProps {
   studyInstanceUID: string;
 }
 
+interface Message {
+  type: 'success' | 'warning' | 'error';
+  text: string;
+}
+
 const StudyMemoModal: React.FC<StudyMemoModalProps> = ({
   isOpen,
   onClose,
-  studyInstanceUID,
+  studyInstanceUID
 }) => {
-  const [memo, setMemo] = useState('');
+  const [memo, setMemo] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error' | 'warning'; text: string } | null>(null);
-  const [orthancStatus, setOrthancStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
-  const [saveResult, setSaveResult] = useState<{ success: boolean; orthancSaved: boolean; localBackupSaved: boolean; message: string } | null>(null);
+  const [message, setMessage] = useState<Message | null>(null);
+  const [saveResult, setSaveResult] = useState<any>(null);
   const [loadResult, setLoadResult] = useState<LoadResult | null>(null);
+  const [orthancStatus, setOrthancStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
+  const [opacity, setOpacity] = useState(0);
   const [loadSourceMessage, setLoadSourceMessage] = useState<string>('');
 
   // 안전한 서비스 초기화
@@ -148,12 +155,21 @@ const StudyMemoModal: React.FC<StudyMemoModalProps> = ({
   };
 
   const handleClose = () => {
-    setMessage(null);
-    setSaveResult(null);
-    setLoadResult(null);
-    setLoadSourceMessage('');
-    onClose();
+    if (!isLoading && !isSaving && !isDeleting) {
+      onClose();
+    }
   };
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOpacity(parseFloat(e.target.value));
+  };
+
+  // 컴포넌트 언마운트 시 이벤트 리스너 정리
+  useEffect(() => {
+    return () => {
+      // No specific cleanup needed for range input
+    };
+  }, []);
 
   const getOrthancStatusText = () => {
     switch (orthancStatus) {
@@ -168,14 +184,16 @@ const StudyMemoModal: React.FC<StudyMemoModalProps> = ({
     }
   };
 
-  const getOrthancStatusColor = () => {
+  const getOrthancStatusIcon = () => {
     switch (orthancStatus) {
+      case 'checking':
+        return <Icons.StatusError className="h-4 w-4 animate-spin text-blue-400" />;
       case 'connected':
-        return 'green';
+        return <Icons.StatusSuccess className="h-4 w-4 text-green-500" />;
       case 'disconnected':
-        return 'orange';
+        return <Icons.StatusWarning className="h-4 w-4 text-yellow-500" />;
       default:
-        return 'gray';
+        return null;
     }
   };
 
@@ -183,270 +201,195 @@ const StudyMemoModal: React.FC<StudyMemoModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '20px',
-        width: '600px',
-        maxWidth: '90vw',
-        maxHeight: '80vh',
-        overflow: 'auto'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>Study Memo</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="relative w-full max-w-2xl max-h-[80vh] overflow-hidden rounded-lg border border-secondary-light" style={{ backgroundColor: `rgba(0, 0, 0, ${opacity})` }}>
+        {/* 헤더 */}
+        <div className="flex items-center justify-between border-b border-secondary-light px-4 py-3" style={{ backgroundColor: `rgba(30, 30, 30, ${opacity})` }}>
+          <div className="flex items-center gap-2">
+            <Icons.InfoSeries className="h-4 w-4 text-white" />
+            <h2 className="text-base font-medium text-white">Study Memo</h2>
+          </div>
           <button
             onClick={handleClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '20px',
-              cursor: 'pointer',
-              color: '#666'
-            }}
+            className="rounded p-1 text-muted-foreground hover:bg-secondary-main hover:text-white transition-colors"
+            disabled={isLoading || isSaving || isDeleting}
           >
-            ×
+            <Icons.Close className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Orthanc 상태 표시 */}
-        <div style={{ 
-          marginBottom: '15px', 
-          padding: '10px', 
-          backgroundColor: orthancStatus === 'connected' ? '#e8f5e8' : '#fff3cd',
-          border: `1px solid ${orthancStatus === 'connected' ? '#28a745' : '#ffc107'}`,
-          borderRadius: '4px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {orthancStatus === 'checking' && (
-              <div style={{ 
-                width: '16px', 
-                height: '16px', 
-                border: '2px solid #ccc', 
-                borderTop: '2px solid #333', 
-                borderRadius: '50%', 
-                animation: 'spin 1s linear infinite' 
-              }} />
+        {/* 컨텐츠 */}
+        <div className="p-4 space-y-3">
+          {/* Orthanc 상태 표시 */}
+          <div className={`rounded border p-3 ${
+            orthancStatus === 'connected'
+              ? 'bg-green-900/20 border-green-500/30'
+              : orthancStatus === 'disconnected'
+              ? 'bg-yellow-900/20 border-yellow-500/30'
+              : 'bg-blue-900/20 border-blue-500/30'
+          }`} style={{ backgroundColor: `rgba(0, 0, 0, ${opacity * 0.8})` }}>
+            <div className="flex items-center gap-2">
+              {getOrthancStatusIcon()}
+              <span className={`text-sm ${
+                orthancStatus === 'connected' ? 'text-green-400' :
+                orthancStatus === 'disconnected' ? 'text-yellow-400' :
+                'text-blue-400'
+              }`}>
+                {getOrthancStatusText()}
+              </span>
+            </div>
+            {orthancStatus === 'disconnected' && (
+              <p className="mt-1 text-xs text-yellow-300">
+                Orthanc 서버에 연결할 수 없어 로컬 스토리지에 백업됩니다.
+              </p>
             )}
-            <span style={{ color: getOrthancStatusColor(), fontWeight: 'bold' }}>
-              {getOrthancStatusText()}
-            </span>
           </div>
-          {orthancStatus === 'disconnected' && (
-            <div style={{ fontSize: '12px', marginTop: '5px', color: '#856404' }}>
-              Orthanc 서버에 연결할 수 없어 로컬 스토리지에 백업됩니다.
+
+          {/* 불러오기 상태 */}
+          {loadResult && (
+            <div className="rounded border border-secondary-light p-2" style={{ backgroundColor: `rgba(30, 30, 30, ${opacity * 0.9})` }}>
+              <div className="flex items-center gap-2">
+                <div className={`h-1.5 w-1.5 rounded-full ${
+                  loadResult.source === 'orthanc' ? 'bg-green-500' :
+                  loadResult.source === 'local' ? 'bg-yellow-500' :
+                  'bg-gray-500'
+                }`} />
+                <span className={`text-xs ${
+                  loadResult.source === 'orthanc' ? 'text-green-400' :
+                  loadResult.source === 'local' ? 'text-yellow-400' :
+                  'text-gray-400'
+                }`}>
+                  {loadSourceMessage}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* 메모 입력 영역 */}
+          <div className="space-y-2">
+            <textarea
+              value={memo || ''}
+              onChange={(e) => setMemo(e.target.value)}
+              placeholder="Study에 대한 메모를 입력하세요..."
+              rows={12}
+              disabled={isLoading}
+              className="w-full resize-y rounded border border-secondary-light px-3 py-2 text-white placeholder-muted-foreground focus:border-primary focus:outline-none disabled:opacity-50"
+              style={{ backgroundColor: `rgba(30, 30, 30, ${opacity * 0.9})` }}
+            />
+          </div>
+
+          {/* 저장 결과 표시 */}
+          {saveResult && (
+            <div className={`rounded border p-3 ${
+              saveResult.success
+                ? 'border-green-500/30'
+                : 'border-red-500/30'
+            }`} style={{ backgroundColor: `rgba(0, 0, 0, ${opacity * 0.8})` }}>
+              <div className="flex items-center gap-2">
+                <div className={`h-1.5 w-1.5 rounded-full ${
+                  saveResult.success ? 'bg-green-500' : 'bg-red-500'
+                }`} />
+                <span className={`text-sm font-medium ${
+                  saveResult.success ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {saveResult.message}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* 기존 메시지 표시 */}
+          {message && (
+            <div className={`rounded border p-3 ${
+              message.type === 'success' ? 'border-green-500/30' :
+              message.type === 'warning' ? 'border-yellow-500/30' :
+              'border-red-500/30'
+            }`} style={{ backgroundColor: `rgba(0, 0, 0, ${opacity * 0.8})` }}>
+              <div className="flex items-center gap-2">
+                {message.type === 'success' && <Icons.StatusSuccess className="h-4 w-4 text-green-400" />}
+                {message.type === 'warning' && <Icons.StatusWarning className="h-4 w-4 text-yellow-400" />}
+                {message.type === 'error' && <Icons.StatusError className="h-4 w-4 text-red-400" />}
+                <span className={`text-sm ${
+                  message.type === 'success' ? 'text-green-400' :
+                  message.type === 'warning' ? 'text-yellow-400' :
+                  'text-red-400'
+                }`}>
+                  {message.text}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* 디버그 정보 (개발 모드에서만 표시) */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="rounded border border-secondary-light p-2" style={{ backgroundColor: `rgba(30, 30, 30, ${opacity * 0.9})` }}>
+              <div className="text-xs text-muted-foreground space-y-0.5">
+                <div><strong>디버그 정보:</strong></div>
+                <div>• Study Instance UID: {studyInstanceUID || 'N/A'}</div>
+                <div>• 저장 방식: {orthancStatus === 'connected' ? 'Orthanc DICOM SR' : '로컬 백업'}</div>
+                <div>• 메모 길이: {(memo || '').length} 문자</div>
+              </div>
             </div>
           )}
         </div>
 
-        {/* 불러오기 상태 */}
-        {loadResult && (
-          <div style={{ 
-            marginBottom: '10px',
-            padding: '8px',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '4px',
-            border: '1px solid #dee2e6'
-          }}>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px',
-              fontSize: '14px'
-            }}>
-              {/* 소스 아이콘 */}
-              <span style={{ 
-                display: 'inline-block',
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: loadResult.source === 'orthanc' ? '#28a745' : 
-                                loadResult.source === 'local' ? '#ffc107' : '#6c757d'
-              }}></span>
-              
-              {/* 소스 메시지 */}
-              <span style={{ 
-                color: loadResult.source === 'orthanc' ? '#28a745' : 
-                       loadResult.source === 'local' ? '#856404' : '#6c757d',
-                fontStyle: 'italic'
-              }}>
-                {loadSourceMessage}
-              </span>
+        {/* 푸터 */}
+        <div className="flex items-center justify-between border-t border-secondary-light px-4 py-3" style={{ backgroundColor: `rgba(30, 30, 30, ${opacity})` }}>
+          {/* 투명도 조절 슬라이더 */}
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-white">투명도:</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="0.1"
+                max="1"
+                step="0.1"
+                value={opacity}
+                onChange={handleSliderChange}
+                className="w-24 h-2 bg-secondary-light rounded-lg appearance-none cursor-pointer slider"
+              />
+              <span className="text-xs text-white w-8 text-right">{Math.round(opacity * 100)}%</span>
             </div>
           </div>
-        )}
 
-        {/* 메모 입력 영역 */}
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-            Study Memo:
-          </label>
-          <textarea
-            value={memo || ''}
-            onChange={(e) => setMemo(e.target.value)}
-            placeholder="Study에 대한 메모를 입력하세요..."
-            rows={8}
-            disabled={isLoading}
-            style={{ 
-              width: '100%', 
-              resize: 'vertical',
-              padding: '8px',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              fontSize: '14px'
-            }}
-          />
-        </div>
+          {/* 버튼들 */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDelete}
+              disabled={isLoading || isSaving || isDeleting || !memo.trim()}
+              className="flex items-center gap-1.5 rounded border border-red-500 bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 hover:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-in-out"
+            >
+              {isDeleting ? (
+                <>
+                  <Icons.StatusError className="h-3 w-3 animate-spin" />
+                  삭제 중...
+                </>
+              ) : (
+                <>
+                  <Icons.Delete className="h-3 w-3" />
+                  메모 삭제
+                </>
+              )}
+            </button>
 
-        {/* 저장 결과 표시 */}
-        {saveResult && (
-          <div style={{
-            marginBottom: '15px',
-            padding: '10px',
-            backgroundColor: saveResult.success ? '#d4edda' : '#f8d7da',
-            border: `1px solid ${saveResult.success ? '#c3e6cb' : '#f5c6cb'}`,
-            borderRadius: '4px',
-            color: saveResult.success ? '#155724' : '#721c24'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ 
-                display: 'inline-block',
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: saveResult.success ? '#28a745' : '#dc3545'
-              }}></span>
-              <span style={{ fontSize: '14px', fontWeight: '500' }}>
-                {saveResult.message}
-              </span>
-            </div>
+            <button
+              onClick={handleSave}
+              disabled={isLoading || isSaving || isDeleting || !memo.trim()}
+              className="flex items-center gap-1.5 rounded bg-primary-main px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-main/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-in-out"
+            >
+              {isSaving ? (
+                <>
+                  <Icons.StatusError className="h-3 w-3 animate-spin" />
+                  저장 중...
+                </>
+              ) : (
+                <>
+                  <Icons.Download className="h-3 w-3" />
+                  Orthanc에 저장
+                </>
+              )}
+            </button>
           </div>
-        )}
-
-        {/* 기존 메시지 표시 */}
-        {message && (
-          <div style={{
-            marginBottom: '15px',
-            padding: '10px',
-            backgroundColor: message.type === 'success' ? '#d4edda' : 
-                           message.type === 'warning' ? '#fff3cd' : '#f8d7da',
-            border: `1px solid ${message.type === 'success' ? '#c3e6cb' : 
-                                message.type === 'warning' ? '#ffeaa7' : '#f5c6cb'}`,
-            borderRadius: '4px',
-            color: message.type === 'success' ? '#155724' : 
-                  message.type === 'warning' ? '#856404' : '#721c24'
-          }}>
-            {message.text}
-          </div>
-        )}
-
-        {/* 버튼 영역 */}
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-          <button
-            onClick={handleDelete}
-            disabled={isLoading || isSaving || isDeleting}
-            style={{
-              padding: '8px 16px',
-              border: '1px solid #dc3545',
-              borderRadius: '4px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-          >
-            {isDeleting ? (
-              <>
-                <div style={{ 
-                  display: 'inline-block',
-                  width: '12px', 
-                  height: '12px', 
-                  border: '2px solid #fff', 
-                  borderTop: '2px solid transparent', 
-                  borderRadius: '50%', 
-                  animation: 'spin 1s linear infinite',
-                  marginRight: '5px'
-                }} />
-                삭제 중...
-              </>
-            ) : (
-              '메모 삭제'
-            )}
-          </button>
-          <button
-            onClick={handleClose}
-            disabled={isLoading || isSaving || isDeleting}
-            style={{
-              padding: '8px 16px',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              backgroundColor: '#f8f9fa',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-          >
-            취소
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={isLoading || isSaving || isDeleting || !memo.trim()}
-            style={{
-              padding: '8px 16px',
-              border: '1px solid #007bff',
-              borderRadius: '4px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-          >
-            {isSaving ? (
-              <>
-                <div style={{ 
-                  display: 'inline-block',
-                  width: '12px', 
-                  height: '12px', 
-                  border: '2px solid #fff', 
-                  borderTop: '2px solid transparent', 
-                  borderRadius: '50%', 
-                  animation: 'spin 1s linear infinite',
-                  marginRight: '5px'
-                }} />
-                저장 중...
-              </>
-            ) : (
-              'Orthanc에 저장'
-            )}
-          </button>
-        </div>
-
-        {/* 디버그 정보 */}
-        <div style={{ 
-          marginTop: '20px', 
-          padding: '10px', 
-          backgroundColor: '#f8f9fa', 
-          borderRadius: '4px',
-          fontSize: '12px',
-          color: '#6c757d'
-        }}>
-          <strong>디버그 정보:</strong>
-          <br />
-          • Study Instance UID: {studyInstanceUID || 'N/A'}
-          <br />
-          • 저장 방식: {orthancStatus === 'connected' ? 'Orthanc DICOM SR' : '로컬 백업'}
-          <br />
-          • 메모 길이: {(memo || '').length} 문자
         </div>
       </div>
     </div>

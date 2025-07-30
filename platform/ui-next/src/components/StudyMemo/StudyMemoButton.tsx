@@ -31,16 +31,25 @@ const StudyMemoButton: React.FC<StudyMemoButtonProps> = ({
     }
   };
 
+  const getButtonSize = () => {
+    switch (size) {
+      case 'sm':
+        return 'h-5 w-5';
+      case 'md':
+        return 'h-6 w-6';
+      case 'lg':
+        return 'h-7 w-7';
+      default:
+        return 'h-5 w-5';
+    }
+  };
+
   return (
     <>
       <button
         onClick={handleClick}
-        className={`flex items-center justify-center rounded bg-primary/20 hover:bg-primary/30 text-primary-light ${getIconSize()}`}
+        className={`${getButtonSize()} flex items-center justify-center rounded bg-black/20 hover:bg-black/40 text-white transition-colors`}
         title="Study Memo"
-        style={{
-          minWidth: size === 'sm' ? '16px' : size === 'md' ? '18px' : '20px',
-          minHeight: size === 'sm' ? '16px' : size === 'md' ? '18px' : '20px'
-        }}
       >
         <Icons.InfoSeries className={getIconSize()} />
       </button>
